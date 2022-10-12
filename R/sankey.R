@@ -224,26 +224,26 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                if(!("value" %in% names(data))) {
                                                  flow_data <- data %>%
                                                    dplyr::mutate(group = 1) %>%
-                                                   dplyr::group_by(n_x, node, n_next_x, next_node) %>%
+                                                   dplyr::group_by(n_x, node, n_next_x, next_node, across(any_of(c("fill", "color")))) %>%
                                                    summarise(flow_freq = dplyr::n(), .groups = "keep") %>%
                                                    dplyr::ungroup()
 
                                                  data <- data %>%
                                                    dplyr::mutate(group = 1) %>%
-                                                   dplyr::select(-n_next_x, -next_node, -next_x) %>%
+                                                   dplyr::select(-n_next_x, -next_node, -next_x, -any_of(c("fill", "color"))) %>%
                                                    dplyr::group_by_all() %>%
                                                    dplyr::summarise(freq = dplyr::n(), .groups = "keep") %>%
                                                    dplyr::ungroup()
                                                } else {
                                                  flow_data <- data %>%
                                                    dplyr::mutate(group = 1) %>%
-                                                   dplyr::group_by(n_x, node, n_next_x, next_node) %>%
+                                                   dplyr::group_by(n_x, node, n_next_x, next_node, dplyr::across(dplyr::any_of(c("fill", "color")))) %>%
                                                    dplyr::summarise(flow_freq = sum(value, na.rm = TRUE), .groups = "keep") %>%
                                                    dplyr::ungroup()
 
                                                  data <- data %>%
                                                    dplyr::mutate(group = 1) %>%
-                                                   dplyr::select(-n_next_x, -next_node, -next_x) %>%
+                                                   dplyr::select(-n_next_x, -next_node, -next_x, -dplyr::any_of(c("fill", "color"))) %>%
                                                    dplyr::group_by_at(dplyr::vars(dplyr::everything(), -value)) %>%
                                                    dplyr::summarise(freq = sum(value, na.rm = TRUE),, .groups = "keep") %>%
                                                    dplyr::ungroup()
@@ -282,15 +282,21 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                  dplyr::left_join(flow_data, by = c("n_x", "node"))
 
 
-
+                                               suppressMessages(
                                                flows <- df %>%
                                                  dplyr::left_join(df %>%
-                                                             dplyr::select(n_x, node, ymin_end = ymin, ymax_end = ymax, xmin_end = xmin, xmax_end = xmax) %>%
-                                                             dplyr::distinct(),
-                                                           by = c("n_next_x" = "n_x", "next_node" = "node")) %>%
+                                                             dplyr::select(n_next_x = n_x, next_node = node,
+                                                                           ymin_end = ymin,
+                                                                           ymax_end = ymax,
+                                                                           xmin_end = xmin,
+                                                                           xmax_end = xmax,
+                                                                           any_of(c("fill", "colour"))) %>%
+                                                             dplyr::distinct() #,
+                                                           # by = c("n_next_x" = "n_x", "next_node" = "node")
+                                                           ) %>%
                                                  tidyr::drop_na(n_x, node, next_node, n_next_x, ymax_end, ymin_end, xmax_end, xmin_end) %>%
                                                  dplyr::mutate(r = dplyr::row_number()) %>%
-                                                 dplyr::arrange(n_x, -r) %>%
+                                                 dplyr::arrange(n_x, desc(next_node), across(any_of(c("fill", "colour"))), -r) %>%
                                                  dplyr::select(-r) %>%
                                                  dplyr::group_by(n_x, node) %>%
                                                  dplyr::mutate(cum_flow_freq = cumsum(flow_freq) - flow_freq) %>%
@@ -298,9 +304,10 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                  dplyr::group_by(n_x, n_next_x, node, next_node) %>%
                                                  dplyr::mutate(flow_start_ymax = ymax - cum_flow_freq,
                                                         flow_start_ymin = flow_start_ymax - flow_freq)
+                                               )
 
                                                flows <- flows %>%
-                                                 dplyr::arrange(n_x, n_next_x, next_node) %>%
+                                                 dplyr::arrange(n_x, n_next_x, next_node, across(any_of(c("fill", "colour")))) %>%
                                                  dplyr::group_by(n_next_x, next_node) %>%
                                                  dplyr::mutate(cum_flow_freq_end = cumsum(flow_freq) - flow_freq) %>%
                                                  dplyr::mutate(flow_end_ymax = ymax_end - cum_flow_freq_end,
@@ -552,6 +559,7 @@ StatSankeyNode <- ggplot2::ggproto("StatSankeyNode", ggplot2::Stat,
                                    extra_params = c("n_grid", "na.rm", "type", "width", "space", "smooth"),
 
                                    setup_data = function(data, params) {
+
 
                                      purrr::map_dfr(unique(data$PANEL),
                                              ~{
