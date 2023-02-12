@@ -290,8 +290,9 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                                            ymax_end = ymax,
                                                                            xmin_end = xmin,
                                                                            xmax_end = xmax,
-                                                                           any_of(c("fill", "colour"))) %>%
-                                                             dplyr::distinct() #,
+                                              #                             any_of(c("fill", "colour"))) %>%
+                                                               ) %>%
+                                                           dplyr::distinct() #,
                                                            # by = c("n_next_x" = "n_x", "next_node" = "node")
                                                            ) %>%
                                                  tidyr::drop_na(n_x, node, next_node, n_next_x, ymax_end, ymin_end, xmax_end, xmin_end) %>%
