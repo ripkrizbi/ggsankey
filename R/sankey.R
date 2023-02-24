@@ -297,7 +297,8 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                            ) %>%
                                                  tidyr::drop_na(n_x, node, next_node, n_next_x, ymax_end, ymin_end, xmax_end, xmin_end) %>%
                                                  dplyr::mutate(r = dplyr::row_number()) %>%
-                                                 dplyr::arrange(n_x, desc(next_node), across(any_of(c("fill", "colour"))), -r) %>%
+                                                #dplyr::arrange(n_x, desc(next_node), across(any_of(c("fill", "colour"))), -r) %>%
+                                                 dplyr::arrange(n_x, desc(next_node), -r) %>%
                                                  dplyr::select(-r) %>%
                                                  dplyr::group_by(n_x, node) %>%
                                                  dplyr::mutate(cum_flow_freq = cumsum(flow_freq) - flow_freq) %>%
@@ -308,7 +309,8 @@ StatSankeyFlow <- ggplot2::ggproto("StatSankeyFlow", ggplot2::Stat,
                                                )
 
                                                flows <- flows %>%
-                                                 dplyr::arrange(n_x, n_next_x, next_node, across(any_of(c("fill", "colour")))) %>%
+                                                 #dplyr::arrange(n_x, n_next_x, next_node, across(any_of(c("fill", "colour")))) %>%
+                                                 dplyr::arrange(n_x, n_next_x, next_node) %>%
                                                  dplyr::group_by(n_next_x, next_node) %>%
                                                  dplyr::mutate(cum_flow_freq_end = cumsum(flow_freq) - flow_freq) %>%
                                                  dplyr::mutate(flow_end_ymax = ymax_end - cum_flow_freq_end,
